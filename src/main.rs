@@ -13,7 +13,7 @@ fn main() -> Result<()> {
     let parts: Vec<&dyn Fn(&[u8]) -> Result<Vec<u8>>> =
         vec![&part0, &part1, &part2, &part3, &part4, &part5];
 
-    for (i, f) in parts.iter().enumerate() {
+    for (i, f) in parts.into_iter().enumerate() {
         let input = read(i)?;
         let output = f(&input)?;
         write(get_path(i + 1), output)?;
@@ -54,7 +54,9 @@ fn read(i: usize) -> Result<Vec<u8>> {
 }
 
 fn decode_ascii85_chunk(x: &[u8]) -> impl Iterator<Item = u8> {
+    assert!(x.len() <= 5 && !x.is_empty());
     let padding_count = 5 - x.len();
+
     let value: u32 = x
         .iter()
         .chain(std::iter::repeat(&b'u').take(padding_count))
@@ -85,10 +87,10 @@ fn part2(input: &[u8]) -> Result<Vec<u8>> {
         .chunks(8)
         .into_iter()
         .flat_map(|c| {
-            let mut value: u64 = 0;
-            for (i, x) in c.enumerate() {
-                value |= ((x & 0xFE) as u64) << (56 - (i * 7));
-            }
+            let value: u64 = c
+                .enumerate()
+                .map(|(i, x)| ((x & 0xFE) as u64) << (56 - (i * 7)))
+                .sum();
 
             std::array::IntoIter::new(value.to_be_bytes()).take(7)
         })
@@ -101,7 +103,7 @@ fn part3(input: &[u8]) -> Result<Vec<u8>> {
     assert!(KNOWN_PLAINTEXT.len() == KEY_SIZE);
     const VERIFY_TEXT: &[u8] = b"==[ Payload ]===============================================";
 
-    let cipher_text: Vec<_> = part0(input)?;
+    let cipher_text: Vec<_> = decode_ascii85(input).collect();
 
     for (i, w) in cipher_text.windows(KEY_SIZE).enumerate() {
         let mut possible_key: Vec<_> = w
@@ -131,8 +133,9 @@ fn part4(input: &[u8]) -> Result<Vec<u8>> {
     const VALID_DEST_PORT: u16 = 42069;
 
     let mut data = vec![];
-    let input = part0(input)?;
+    let input: Vec<_> = decode_ascii85(input).collect();
     let mut unread: &[u8] = &input;
+
     while !unread.is_empty() {
         let packet = SlicedPacket::from_ip(unread)?;
         match (packet.ip.unwrap(), packet.transport.unwrap()) {
@@ -155,13 +158,14 @@ fn part4(input: &[u8]) -> Result<Vec<u8>> {
 }
 
 fn part5(input: &[u8]) -> Result<Vec<u8>> {
-    let input = part0(input)?;
+    let input: Vec<_> = decode_ascii85(input).collect();
     let kek = &input[..32];
     let kek_iv = &input[32..40];
     let encrypted_key = &input[40..80];
     let payload_iv = &input[80..96];
     let payload = &input[96..];
 
+    // TODO: When openssl has `impl Error for aes::KeyError` change below unwraps into ?
     let mut decrypted_key = [0; 32];
     let kek = AesKey::new_decrypt(kek).unwrap();
     let decrypted_len = unwrap_key(
@@ -178,6 +182,5 @@ fn part5(input: &[u8]) -> Result<Vec<u8>> {
         &decrypted_key,
         Some(payload_iv),
         payload,
-    )
-    .unwrap())
+    )?)
 }
