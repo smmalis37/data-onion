@@ -140,7 +140,7 @@ fn part4(input: &[u8]) -> Result<Vec<u8>> {
                     && ip_header.destination_addr() == VALID_DEST
                     && udp_header.destination_port() == VALID_DEST_PORT
                 {
-                    data.extend_from_slice(packet.payload);
+                    data.extend_from_slice(&packet.payload[..(udp_header.length() - 8) as usize]);
                 }
             }
             _ => unreachable!(),
