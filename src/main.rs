@@ -4,10 +4,11 @@ use anyhow::*;
 use std::fs::{read_to_string, write};
 
 fn main() -> Result<()> {
-    for i in 0..=0 {
+    for i in 0..=1 {
         let input = read(i)?;
         let output = match i {
             0 => part0(input),
+            1 => part1(input),
             _ => unreachable!(),
         };
         write(get_path(i + 1), output)?;
@@ -61,4 +62,11 @@ fn decode_ascii85_chunk(x: &[u8]) -> impl Iterator<Item = u8> {
 
 fn part0(input: Vec<u8>) -> Vec<u8> {
     input.chunks(5).flat_map(decode_ascii85_chunk).collect()
+}
+
+fn part1(input: Vec<u8>) -> Vec<u8> {
+    part0(input)
+        .into_iter()
+        .map(|x| (x ^ 0x55).rotate_right(1))
+        .collect()
 }
