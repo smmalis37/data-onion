@@ -139,6 +139,7 @@ fn part4(input: &[u8]) -> Result<Vec<u8>> {
             (InternetSlice::Ipv4(ip_header), TransportSlice::Udp(udp_header)) => {
                 unread = &unread[ip_header.total_len() as usize..];
 
+                // TODO: validate checksums
                 if ip_header.source_addr() == VALID_SOURCE
                     && ip_header.destination_addr() == VALID_DEST
                     && udp_header.destination_port() == VALID_DEST_PORT
