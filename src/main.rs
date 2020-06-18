@@ -4,11 +4,12 @@ use anyhow::*;
 use std::fs::{read_to_string, write};
 
 fn main() -> Result<()> {
-    for i in 0..=1 {
+    for i in 0..=2 {
         let input = read(i)?;
         let output: Vec<_> = match i {
             0 => part0(&input).collect(),
             1 => part1(&input).collect(),
+            2 => part2(&input),
             _ => unreachable!(),
         };
         write(get_path(i + 1), output)?;
@@ -66,4 +67,21 @@ fn part0(input: &[u8]) -> impl Iterator<Item = u8> + '_ {
 
 fn part1(input: &[u8]) -> impl Iterator<Item = u8> + '_ {
     part0(input).map(|x| (x ^ 0x55).rotate_right(1))
+}
+
+fn part2(input: &[u8]) -> Vec<u8> {
+    let step1: Vec<_> = part0(input).filter(|x| x.count_ones() % 2 == 0).collect();
+
+    let chunks = step1.chunks_exact(8);
+    assert!(chunks.remainder().is_empty());
+    chunks
+        .flat_map(|c| {
+            let mut value: u64 = 0;
+            for (i, x) in c.iter().enumerate() {
+                value |= ((x & 0xFE) as u64) << (56 - (i * 7));
+            }
+
+            std::array::IntoIter::new(value.to_be_bytes()).take(7)
+        })
+        .collect()
 }
