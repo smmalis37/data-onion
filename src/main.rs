@@ -5,26 +5,22 @@ use itertools::Itertools;
 use std::fs::{read_to_string, write};
 
 fn main() -> Result<()> {
-    for i in 0..=3 {
+    let parts: Vec<&dyn Fn(&[u8]) -> Vec<u8>> = vec![&part0, &part1, &part2, &part3];
+
+    for (i, f) in parts.iter().enumerate() {
         let input = read(i)?;
-        let output = match i {
-            0 => part0(&input),
-            1 => part1(&input),
-            2 => part2(&input),
-            3 => part3(&input),
-            _ => unreachable!(),
-        };
+        let output = f(&input);
         write(get_path(i + 1), output)?;
     }
 
     Ok(())
 }
 
-fn get_path(i: u8) -> String {
+fn get_path(i: usize) -> String {
     format!("onion/{}.txt", i)
 }
 
-fn read(i: u8) -> Result<Vec<u8>> {
+fn read(i: usize) -> Result<Vec<u8>> {
     let file_contents = read_to_string(get_path(i)).context("Failed reading input file.")?;
 
     let payload_index = file_contents
