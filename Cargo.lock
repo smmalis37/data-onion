@@ -7,10 +7,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "85bb70cc08ec97ca5450e6eba421deeea5f172c0fc61f78b5357b2a8e8be195f"
 
 [[package]]
+name = "byteorder"
+version = "1.3.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "08c48aae112d48ed9f069b33538ea9e3e90aa263cfa3d1c24309612b1f7472de"
+
+[[package]]
 name = "data-onion"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "etherparse",
  "itertools",
 ]
 
@@ -19,6 +26,15 @@ name = "either"
 version = "1.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bb1f6b1ce1c140482ea30ddd3335fc0024ac7ee112895426e0a629a6c20adfe3"
+
+[[package]]
+name = "etherparse"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2fa20922281f9ee5ffcda45e80d56085829279f1270f79fbabc39809a4354807"
+dependencies = [
+ "byteorder",
+]
 
 [[package]]
 name = "itertools"
