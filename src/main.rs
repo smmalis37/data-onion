@@ -3,12 +3,15 @@
 use anyhow::*;
 use etherparse::*;
 use itertools::Itertools;
+use openssl::aes::{unwrap_key, AesKey};
+use openssl::symm::{decrypt, Cipher};
+use std::convert::TryInto;
 use std::fs::{read_to_string, write};
 use std::net::Ipv4Addr;
 
 fn main() -> Result<()> {
     let parts: Vec<&dyn Fn(&[u8]) -> Result<Vec<u8>>> =
-        vec![&part0, &part1, &part2, &part3, &part4];
+        vec![&part0, &part1, &part2, &part3, &part4, &part5];
 
     for (i, f) in parts.iter().enumerate() {
         let input = read(i)?;
@@ -148,4 +151,32 @@ fn part4(input: &[u8]) -> Result<Vec<u8>> {
     }
 
     Ok(data)
+}
+
+fn part5(input: &[u8]) -> Result<Vec<u8>> {
+    let input = part0(input)?;
+    let kek = &input[..32];
+    let kek_iv = &input[32..40];
+    let encrypted_key = &input[40..80];
+    let payload_iv = &input[80..96];
+    let payload = &input[96..];
+
+    let mut decrypted_key = [0; 32];
+    let kek = AesKey::new_decrypt(kek).unwrap();
+    let decrypted_len = unwrap_key(
+        &kek,
+        Some(kek_iv.try_into().unwrap()),
+        &mut decrypted_key,
+        encrypted_key,
+    )
+    .unwrap();
+    assert!(decrypted_len == decrypted_key.len());
+
+    Ok(decrypt(
+        Cipher::aes_256_cbc(),
+        &decrypted_key,
+        Some(payload_iv),
+        payload,
+    )
+    .unwrap())
 }
