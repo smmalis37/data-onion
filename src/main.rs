@@ -6,9 +6,9 @@ use std::fs::{read_to_string, write};
 fn main() -> Result<()> {
     for i in 0..=1 {
         let input = read(i)?;
-        let output = match i {
-            0 => part0(input),
-            1 => part1(input),
+        let output: Vec<_> = match i {
+            0 => part0(&input).collect(),
+            1 => part1(&input).collect(),
             _ => unreachable!(),
         };
         write(get_path(i + 1), output)?;
@@ -60,13 +60,10 @@ fn decode_ascii85_chunk(x: &[u8]) -> impl Iterator<Item = u8> {
     std::array::IntoIter::new(value.to_be_bytes()).take(4 - padding_count)
 }
 
-fn part0(input: Vec<u8>) -> Vec<u8> {
-    input.chunks(5).flat_map(decode_ascii85_chunk).collect()
+fn part0(input: &[u8]) -> impl Iterator<Item = u8> + '_ {
+    input.chunks(5).flat_map(decode_ascii85_chunk)
 }
 
-fn part1(input: Vec<u8>) -> Vec<u8> {
-    part0(input)
-        .into_iter()
-        .map(|x| (x ^ 0x55).rotate_right(1))
-        .collect()
+fn part1(input: &[u8]) -> impl Iterator<Item = u8> + '_ {
+    part0(input).map(|x| (x ^ 0x55).rotate_right(1))
 }
