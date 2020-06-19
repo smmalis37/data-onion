@@ -154,6 +154,7 @@ fn part4(input: &[u8]) -> Result<Vec<u8>> {
         }
     }
 
+    ensure!(unread.is_empty(), anyhow!("Did not consume all input."));
     Ok(data)
 }
 
