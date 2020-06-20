@@ -1,13 +1,14 @@
-#![feature(array_value_iter)]
-
 use anyhow::*;
 use etherparse::*;
 use itertools::Itertools;
 use openssl::aes::{unwrap_key, AesKey};
 use openssl::symm::{decrypt, Cipher};
+use smallvec::SmallVec;
 use std::convert::TryInto;
 use std::fs::{read_to_string, write};
 use std::net::Ipv4Addr;
+
+// TODO: Replace SmallVec with #![feature(array_value_iter)] when stable.
 
 fn main() -> Result<()> {
     let parts: Vec<&dyn Fn(&[u8]) -> Result<Vec<u8>>> =
@@ -64,7 +65,9 @@ fn decode_ascii85_chunk(x: &[u8]) -> impl Iterator<Item = u8> {
         .map(|(i, &v)| (v as u32 - 33) * 85u32.pow(4 - i as u32))
         .sum();
 
-    std::array::IntoIter::new(value.to_be_bytes()).take(4 - padding_count)
+    SmallVec::from_buf(value.to_be_bytes())
+        .into_iter()
+        .take(4 - padding_count)
 }
 
 fn decode_ascii85(input: &[u8]) -> impl Iterator<Item = u8> + '_ {
@@ -92,7 +95,7 @@ fn part2(input: &[u8]) -> Result<Vec<u8>> {
                 .map(|(i, x)| ((x & 0xFE) as u64) << (56 - (i * 7)))
                 .sum();
 
-            std::array::IntoIter::new(value.to_be_bytes()).take(7)
+            SmallVec::from_buf(value.to_be_bytes()).into_iter().take(7)
         })
         .collect())
 }
