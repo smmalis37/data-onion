@@ -118,7 +118,8 @@ fn part3(input: &[u8]) -> Result<Vec<u8>> {
     const KEY_SIZE: usize = 32;
     const KNOWN_PLAINTEXT: &[u8] = b"==[ Payload ]===================";
     assert!(KNOWN_PLAINTEXT.len() == KEY_SIZE);
-    const VERIFY_TEXT: &[u8] = b"============================";
+    const VERIFY_TEXT: &[u8] = b"============================\n\n<~";
+    assert!(VERIFY_TEXT.len() == KEY_SIZE);
 
     let cipher_text: Vec<_> = decode_ascii85(input).collect();
 
