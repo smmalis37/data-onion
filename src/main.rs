@@ -106,30 +106,39 @@ fn part2(input: &[u8]) -> Result<Vec<u8>> {
         .collect())
 }
 
+fn decode_xor_text(cipher_text: &[u8], key: &[u8]) -> Vec<u8> {
+    cipher_text
+        .iter()
+        .zip(key.iter().cycle())
+        .map(|(x1, x2)| x1 ^ x2)
+        .collect()
+}
+
 fn part3(input: &[u8]) -> Result<Vec<u8>> {
     const KEY_SIZE: usize = 32;
     const KNOWN_PLAINTEXT: &[u8] = b"==[ Payload ]===================";
     assert!(KNOWN_PLAINTEXT.len() == KEY_SIZE);
-    const VERIFY_TEXT: &[u8] = b"==[ Payload ]===============================================";
+    const VERIFY_TEXT: &[u8] = b"============================";
 
     let cipher_text: Vec<_> = decode_ascii85(input).collect();
 
-    for (i, w) in cipher_text.windows(KEY_SIZE).enumerate() {
-        let mut possible_key: Vec<_> = w
-            .iter()
-            .zip(KNOWN_PLAINTEXT)
-            .map(|(x1, x2)| x1 ^ x2)
-            .collect();
-        possible_key.rotate_right(i % KEY_SIZE);
+    for known_plaintext_start in 0..cipher_text.len() {
+        let known_plaintext_end = known_plaintext_start + KNOWN_PLAINTEXT.len();
 
-        let decoded_text: Vec<_> = cipher_text
-            .iter()
-            .zip(possible_key.iter().cycle())
-            .map(|(x1, x2)| x1 ^ x2)
-            .collect();
+        let mut possible_key = decode_xor_text(
+            &cipher_text[known_plaintext_start..known_plaintext_end],
+            KNOWN_PLAINTEXT,
+        );
 
-        if decoded_text[i..].starts_with(VERIFY_TEXT) {
-            return Ok(decoded_text);
+        let test_text_end = known_plaintext_end + VERIFY_TEXT.len();
+        let test_text = decode_xor_text(
+            &cipher_text[known_plaintext_end..test_text_end],
+            &possible_key,
+        );
+
+        if test_text == VERIFY_TEXT {
+            possible_key.rotate_right(known_plaintext_start % KEY_SIZE);
+            return Ok(decode_xor_text(&cipher_text, &possible_key));
         }
     }
 
