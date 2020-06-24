@@ -9,6 +9,7 @@ use smallvec::SmallVec;
 use std::convert::TryInto;
 use std::fs::{read_to_string, write};
 use std::net::Ipv4Addr;
+use std::time::Instant;
 
 // TODO: Replace SmallVec with #![feature(array_value_iter)] when stable.
 
@@ -18,7 +19,10 @@ fn main() -> Result<()> {
 
     for (i, f) in parts.into_iter().enumerate() {
         let input = read(i)?;
+        let start_time = Instant::now();
         let output = f(&input)?;
+        let final_time = Instant::now();
+        println!("Part {} took {:?}.", i, final_time - start_time);
         write(get_path(i + 1), output)?;
     }
 
