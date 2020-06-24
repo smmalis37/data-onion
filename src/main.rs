@@ -1,8 +1,10 @@
 use anyhow::*;
-use etherparse::*;
 use itertools::Itertools;
 use openssl::aes::{unwrap_key, AesKey};
 use openssl::symm::{decrypt, Cipher};
+use pnet_packet::ipv4::Ipv4Packet;
+use pnet_packet::udp::UdpPacket;
+use pnet_packet::{Packet, PacketSize};
 use smallvec::SmallVec;
 use std::convert::TryInto;
 use std::fs::{read_to_string, write};
@@ -140,20 +142,18 @@ fn part4(input: &[u8]) -> Result<Vec<u8>> {
     let mut unread: &[u8] = &input;
 
     while !unread.is_empty() {
-        let packet = SlicedPacket::from_ip(unread)?;
-        match (packet.ip.unwrap(), packet.transport.unwrap()) {
-            (InternetSlice::Ipv4(ip_header), TransportSlice::Udp(udp_header)) => {
-                unread = &unread[ip_header.total_len() as usize..];
+        let ip_packet = Ipv4Packet::new(unread).context("Failed to parse IP packet.")?;
+        let udp_packet =
+            UdpPacket::new(ip_packet.payload()).context("Failed to parse UDP packet.")?;
 
-                // TODO: validate checksums
-                if ip_header.source_addr() == VALID_SOURCE
-                    && ip_header.destination_addr() == VALID_DEST
-                    && udp_header.destination_port() == VALID_DEST_PORT
-                {
-                    data.extend_from_slice(&packet.payload[..(udp_header.length() - 8) as usize]);
-                }
-            }
-            _ => unreachable!(),
+        unread = &unread[ip_packet.packet_size() as usize..];
+
+        // TODO: validate checksums
+        if ip_packet.get_source() == VALID_SOURCE
+            && ip_packet.get_destination() == VALID_DEST
+            && udp_packet.get_destination() == VALID_DEST_PORT
+        {
+            data.extend_from_slice(&udp_packet.payload());
         }
     }
 
