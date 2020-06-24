@@ -2,8 +2,8 @@ use anyhow::*;
 use itertools::Itertools;
 use openssl::aes::{unwrap_key, AesKey};
 use openssl::symm::{decrypt, Cipher};
-use pnet_packet::ipv4::Ipv4Packet;
-use pnet_packet::udp::UdpPacket;
+use pnet_packet::ipv4::{checksum as ip_checksum, Ipv4Packet};
+use pnet_packet::udp::{ipv4_checksum as udp_checksum, UdpPacket};
 use pnet_packet::{Packet, PacketSize};
 use smallvec::SmallVec;
 use std::convert::TryInto;
@@ -148,10 +148,14 @@ fn part4(input: &[u8]) -> Result<Vec<u8>> {
 
         unread = &unread[ip_packet.packet_size() as usize..];
 
-        // TODO: validate checksums
-        if ip_packet.get_source() == VALID_SOURCE
-            && ip_packet.get_destination() == VALID_DEST
+        let source_ip = ip_packet.get_source();
+        let dest_ip = ip_packet.get_destination();
+
+        if source_ip == VALID_SOURCE
+            && dest_ip == VALID_DEST
             && udp_packet.get_destination() == VALID_DEST_PORT
+            && ip_packet.get_checksum() == ip_checksum(&ip_packet)
+            && udp_packet.get_checksum() == udp_checksum(&udp_packet, &source_ip, &dest_ip)
         {
             data.extend_from_slice(&udp_packet.payload());
         }
